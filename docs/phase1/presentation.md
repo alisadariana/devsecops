@@ -21,9 +21,9 @@
 ### Critical Statistics
 
 - **742% increase** in supply chain attacks (2019-2022)
-- **25% increase** in monthly supply chain attacks (2024-2025)
-- **75%** of software supply chains reported attacks in 2024
-- **45%** of organizations experienced supply chain attacks by 2025 (Gartner)
+- **25% increase** in monthly supply chain attacks (April-August 2025)
+- **75%** of software supply chains reported attacks in 2024 (exceeding Gartner's 45% prediction for 2025)
+- **45%** of organizations experienced supply chain attacks by 2025 (Gartner prediction - actual rate significantly higher)
 
 ---
 
@@ -185,7 +185,8 @@
 
 ### Financial Impact
 
-- **Average data breach cost**: $4.45 million (2024)
+- **Average data breach cost**: $4.88 million (2024) — 10% increase from $4.45M in 2023
+- **Industry-specific costs**: Healthcare ($9.77M), Financial ($5.9M)
 - **Ransomware recovery time**: 23 days average
 - **Supply chain attack costs**: $60B in 2025 → projected $138B by 2031
 - **CDK Global attack**: $1+ billion in losses
@@ -207,6 +208,7 @@
 2. **GitHub Actions is a prime target** - 23K+ repos affected in recent incidents
 3. **Secret management is paramount** - most breaches involve credential exposure
 4. **Standards exist but adoption lags** - SLSA, NIST frameworks provide clear guidance
+5. **Reality exceeded predictions** - 75% of organizations hit by supply chain attacks in 2024, surpassing Gartner's 45% forecast for 2025
 
 ### Recommended Focus Areas
 
@@ -235,5 +237,8 @@
 - NIST SP 800-218 (SSDF) & SP 800-204D
 - SLSA Framework v1.0 (OpenSSF)
 - GitHub Security Best Practices Documentation
+- IBM Cost of a Data Breach Report 2024
 - Palo Alto Networks Unit 42: Supply Chain Attack Analysis (2025)
 - Cyble Threat Intelligence: Supply Chain Attacks Report (2025)
+- Cybersecurity Ventures: Supply Chain Attack Cost Projections
+- Sonatype: State of the Software Supply Chain Report

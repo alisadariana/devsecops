@@ -14,9 +14,9 @@ The modern DevSecOps ecosystem, particularly CI/CD pipelines powered by platform
 
 **Key Findings:**
 
-- Supply chain attacks increased by 742% between 2019-2022 and continue to accelerate, with monthly attacks doubling in 2025
+- Supply chain attacks increased by 742% between 2019-2022 and continue to accelerate, with monthly attacks increasing by 25% from April to August 2025
 - GitHub Actions has been the target of multiple high-profile compromises affecting tens of thousands of repositories
-- 75% of software supply chains reported attacks in 2024, with 45% of organizations experiencing breaches by 2025
+- 75% of software supply chains reported attacks in 2024, significantly exceeding Gartner's prediction of 45% by 2025
 - Established frameworks (SLSA, NIST SSDF, OWASP Top 10 CI/CD) provide comprehensive guidance, but adoption remains inconsistent
 - Secret management and credential hygiene remain the most critical vulnerabilities in CI/CD environments
 
@@ -101,14 +101,17 @@ This attack demonstrates a sophisticated understanding of GitHub Actions interna
 **Supply Chain Attack Trends:**
 
 - **2019-2022**: 742% increase in supply chain attacks
-- **2024**: 75% of software supply chains reported attacks
-- **October 2024 - May 2025**: 25% increase in monthly attack rates
-- **April-August 2025**: Attacks doubled to ~26 per month (from ~13)
+- **2024**: 75% of software supply chains reported attacks (exceeding Gartner's 45% prediction for 2025)
+- **April-August 2025**: Attacks doubled to ~26 per month (from ~13 earlier in 2024)
 - **September 2025**: Largest npm compromise in history - 18 packages with billions of weekly downloads
 
 **Financial Impact:**
 
-- Average data breach cost: $4.45 million (15% increase over 3 years)
+- Average data breach cost: $4.88 million (2024) — 10% increase from $4.45 million in 2023
+- Industry-specific breach costs (2024):
+  - Healthcare: $9.77 million (highest for 14th consecutive year)
+  - Financial services: $5.9 million
+  - Technology: $4.7 million
 - Global supply chain attack costs: $60 billion (2025) → projected $138 billion (2031)
 - CDK Global ransomware: $1+ billion in losses
 - Average ransomware recovery time: 23 days
@@ -118,6 +121,10 @@ This attack demonstrates a sophisticated understanding of GitHub Actions interna
 - 63% of supply chain attacks target IT/technology/telecom sectors
 - 22 out of 24 tracked sectors affected in first half of 2025
 - U.S. targeted in 39% of incidents, Europe in 34%
+
+**Reality vs. Predictions:**
+
+Gartner's 2021 prediction that 45% of organizations would experience supply chain attacks by 2025 was significantly exceeded. BlackBerry's 2024 survey revealed that 75% of organizations had already experienced a software supply chain attack within the prior year, demonstrating that the threat landscape evolved faster than even expert analysts anticipated.
 
 ---
 
@@ -601,6 +608,8 @@ While GitHub manages hosted runners, self-hosted runners should be hardened acco
 
 The DevSecOps ecosystem faces significant and evolving threats, as evidenced by the recent supply chain attacks and the statistics showing dramatic increases in attack frequency and sophistication. GitHub Actions and similar CI/CD platforms are prime targets due to their privileged access to source code, secrets, and production environments.
 
+The reality of the threat landscape has exceeded even expert predictions. Gartner's 2021 forecast that 45% of organizations would experience supply chain attacks by 2025 was significantly surpassed, with 75% of organizations already affected by 2024. This demonstrates that the threat is evolving faster than anticipated and requires urgent, comprehensive action.
+
 However, established frameworks (SLSA, NIST SSDF, OWASP Top 10 CI/CD) provide comprehensive guidance for securing these critical systems. The key challenge lies not in the absence of standards, but in their consistent implementation and the balance between security and development velocity.
 
 This project will focus on practical implementation of these security controls, with GitHub Actions as the primary platform, to demonstrate how organizations can secure their CI/CD pipelines effectively while maintaining the agility that modern development practices demand.
@@ -625,7 +634,11 @@ This project will focus on practical implementation of these security controls, 
 7. NIST, "Strategies for the Integration of SSC Security in DevSecOps CI/CD Pipelines," SP 800-204D, 2024
 8. OpenSSF, "SLSA Framework v1.0," 2024
 9. StepSecurity, "GitHub Actions Secrets Management Best Practices," 2024
-10. Ivanti, "2025 State of Cybersecurity Report," 2025
-11. Gartner, "Supply Chain Attack Predictions," 2024
-12. CIS, "Kubernetes and Docker Benchmarks," 2024
-13. GitHub Documentation, "Security Hardening for GitHub Actions," 2025
+10. IBM, "Cost of a Data Breach Report 2024," July 2024
+11. Ivanti, "2025 State of Cybersecurity Report," 2025
+12. Gartner, "Supply Chain Attack Predictions," 2021-2024
+13. BlackBerry, "Software Supply Chain Security Survey," 2024
+14. Cybersecurity Ventures, "Software Supply Chain Attack Cost Projections," 2024
+15. Sonatype, "State of the Software Supply Chain Report," 2022
+16. CIS, "Kubernetes and Docker Benchmarks," 2024
+17. GitHub Documentation, "Security Hardening for GitHub Actions," 2025
