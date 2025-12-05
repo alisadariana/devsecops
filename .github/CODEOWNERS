@@ -3,28 +3,28 @@
 
 # Default owners for everything in the repo
 # These users will be requested for review when someone opens a pull request
-* alisadariana
+* alisadariana@protonmail.com
 
 # Security-critical configurations require security team approval
-/.github/workflows/ alisadariana
-/.github/CODEOWNERS alisadariana
-/docs/security/ alisadariana
+/.github/workflows/ alisadariana@protonmail.com
+/.github/CODEOWNERS alisadariana@protonmail.com
+/docs/security/ alisadariana@protonmail.com
 
 # CI/CD pipelines and security configs
-.github/workflows/*.yml alisadariana
-.github/dependabot.yml alisadariana
+.github/workflows/*.yml alisadariana@protonmail.com
+.github/dependabot.yml alisadariana@protonmail.com
 
 # Any secret management or security-related code
-**/security/** alisadariana
-**/*secret* alisadariana
-**/*auth* alisadariana
+**/security/** alisadariana@protonmail.com
+**/*secret* alisadariana@protonmail.com
+**/*auth* alisadariana@protonmail.com
 
 # Infrastructure and deployment configurations
-**/deploy/** alisadariana
-**/terraform/** alisadariana
-**/k8s/** alisadariana
-**/*.tf alisadariana
+**/deploy/** alisadariana@protonmail.com
+**/terraform/** alisadariana@protonmail.com
+**/k8s/** alisadariana@protonmail.com
+**/*.tf alisadariana@protonmail.com
 
 # Documentation can be reviewed by maintainers
-/docs/ alisadariana
-*.md alisadariana
+/docs/ alisadariana@protonmail.com
+*.md alisadariana@protonmail.com
