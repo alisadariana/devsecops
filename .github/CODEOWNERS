@@ -1,0 +1,30 @@
+# CODEOWNERS - Defines who must review changes to specific files/directories
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+# These users will be requested for review when someone opens a pull request
+* alisadariana
+
+# Security-critical configurations require security team approval
+/.github/workflows/ alisadariana
+/.github/CODEOWNERS alisadariana
+/docs/security/ alisadariana
+
+# CI/CD pipelines and security configs
+.github/workflows/*.yml alisadariana
+.github/dependabot.yml alisadariana
+
+# Any secret management or security-related code
+**/security/** alisadariana
+**/*secret* alisadariana
+**/*auth* alisadariana
+
+# Infrastructure and deployment configurations
+**/deploy/** alisadariana
+**/terraform/** alisadariana
+**/k8s/** alisadariana
+**/*.tf alisadariana
+
+# Documentation can be reviewed by maintainers
+/docs/ alisadariana
+*.md alisadariana

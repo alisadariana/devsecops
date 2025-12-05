@@ -1,0 +1,74 @@
+name: Verify Commit Signatures
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  verify-signatures:
+    name: Verify All Commits Are Signed
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0  # Fetch all history for all branches
+
+      - name: Verify commit signatures
+        run: |
+          echo "Checking commit signatures..."
+
+          # Determine the range of commits to check
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            COMMIT_RANGE="${BASE_SHA}..${HEAD_SHA}"
+          else
+            # For push events, check the pushed commits
+            COMMIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
+          fi
+
+          echo "Checking commits in range: ${COMMIT_RANGE}"
+
+          # Get all commits in the range
+          UNSIGNED_COMMITS=$(git log --pretty="%H %G? %GS" ${COMMIT_RANGE} | grep -v " G " | grep -v " U " || true)
+
+          if [ -n "$UNSIGNED_COMMITS" ]; then
+            echo "❌ ERROR: Found unsigned commits:"
+            echo "$UNSIGNED_COMMITS"
+            echo ""
+            echo "All commits must be signed with GPG or SSH."
+            echo "Please see the documentation on how to sign commits:"
+            echo "https://docs.github.com/en/authentication/managing-commit-signature-verification"
+            exit 1
+          else
+            echo "✅ All commits are properly signed!"
+          fi
+
+      - name: Verify signatures are from known contributors
+        run: |
+          echo "Verifying commit authors..."
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            COMMIT_RANGE="${BASE_SHA}..${HEAD_SHA}"
+          else
+            COMMIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
+          fi
+
+          # Check each commit's author email matches the committer email
+          MISMATCHED=$(git log --pretty="%H %ae %ce" ${COMMIT_RANGE} | awk '{if($2 != $3) print}' || true)
+
+          if [ -n "$MISMATCHED" ]; then
+            echo "⚠️  WARNING: Found commits where author email doesn't match committer email:"
+            echo "$MISMATCHED"
+            echo "This may indicate commit spoofing."
+          else
+            echo "✅ All commit authors verified!"
+          fi
