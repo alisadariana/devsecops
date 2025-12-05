@@ -12,63 +12,126 @@ jobs:
   verify-signatures:
     name: Verify All Commits Are Signed
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0  # Fetch all history for all branches
-
-      - name: Verify commit signatures
+      
+      - name: Get commit range
+        id: commit-range
         run: |
-          echo "Checking commit signatures..."
-
-          # Determine the range of commits to check
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-            COMMIT_RANGE="${BASE_SHA}..${HEAD_SHA}"
+            echo "base=${BASE_SHA}" >> $GITHUB_OUTPUT
+            echo "head=${HEAD_SHA}" >> $GITHUB_OUTPUT
+            echo "range=${BASE_SHA}..${HEAD_SHA}" >> $GITHUB_OUTPUT
           else
             # For push events, check the pushed commits
-            COMMIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+            echo "base=${BASE_SHA}" >> $GITHUB_OUTPUT
+            echo "head=${HEAD_SHA}" >> $GITHUB_OUTPUT
+            echo "range=${BASE_SHA}..${HEAD_SHA}" >> $GITHUB_OUTPUT
           fi
-
-          echo "Checking commits in range: ${COMMIT_RANGE}"
-
-          # Get all commits in the range
-          UNSIGNED_COMMITS=$(git log --pretty="%H %G? %GS" ${COMMIT_RANGE} | grep -v " G " | grep -v " U " || true)
-
-          if [ -n "$UNSIGNED_COMMITS" ]; then
-            echo "❌ ERROR: Found unsigned commits:"
-            echo "$UNSIGNED_COMMITS"
+          
+          echo "Checking commits in range: ${BASE_SHA}..${HEAD_SHA}"
+          
+      - name: Verify commits are signed (GitHub API method)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "🔍 Verifying commit signatures using GitHub API..."
+          echo ""
+          
+          COMMIT_RANGE="${{ steps.commit-range.outputs.range }}"
+          
+          # Get list of commits
+          COMMITS=$(git rev-list ${COMMIT_RANGE})
+          
+          if [ -z "$COMMITS" ]; then
+            echo "ℹ️  No commits to verify in this range"
+            exit 0
+          fi
+          
+          UNSIGNED_COMMITS=0
+          TOTAL_COMMITS=0
+          
+          for commit in $COMMITS; do
+            TOTAL_COMMITS=$((TOTAL_COMMITS + 1))
+            
+            # Get commit info
+            COMMIT_MSG=$(git log --format=%s -n 1 $commit)
+            COMMIT_AUTHOR=$(git log --format=%an -n 1 $commit)
+            
+            echo "Checking commit: $commit"
+            echo "  Author: $COMMIT_AUTHOR"
+            echo "  Message: $COMMIT_MSG"
+            
+            # Query GitHub API for commit verification status
+            VERIFICATION=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${{ github.repository }}/commits/${commit}" \
+              --jq '.commit.verification | {verified: .verified, reason: .reason, signature: .signature}')
+            
+            VERIFIED=$(echo "$VERIFICATION" | jq -r '.verified')
+            REASON=$(echo "$VERIFICATION" | jq -r '.reason')
+            
+            if [ "$VERIFIED" = "true" ]; then
+              echo "  ✅ Signature verified"
+            else
+              echo "  ❌ NOT VERIFIED - Reason: $REASON"
+              UNSIGNED_COMMITS=$((UNSIGNED_COMMITS + 1))
+            fi
+            echo ""
+          done
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Verification Summary:"
+          echo "  Total commits checked: $TOTAL_COMMITS"
+          echo "  Verified commits: $((TOTAL_COMMITS - UNSIGNED_COMMITS))"
+          echo "  Unsigned commits: $UNSIGNED_COMMITS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          if [ $UNSIGNED_COMMITS -gt 0 ]; then
+            echo ""
+            echo "❌ ERROR: Found $UNSIGNED_COMMITS unsigned commit(s)!"
             echo ""
             echo "All commits must be signed with GPG or SSH."
-            echo "Please see the documentation on how to sign commits:"
+            echo "Please see the documentation:"
             echo "https://docs.github.com/en/authentication/managing-commit-signature-verification"
+            echo ""
+            echo "To sign commits with SSH:"
+            echo "  git config --global gpg.format ssh"
+            echo "  git config --global user.signingkey ~/.ssh/id_ed25519.pub"
+            echo "  git config --global commit.gpgsign true"
             exit 1
           else
-            echo "✅ All commits are properly signed!"
+            echo ""
+            echo "✅ All commits are properly signed and verified by GitHub!"
           fi
-
-      - name: Verify signatures are from known contributors
+      
+      - name: Verify commit author attribution
         run: |
-          echo "Verifying commit authors..."
-
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-            COMMIT_RANGE="${BASE_SHA}..${HEAD_SHA}"
-          else
-            COMMIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
-          fi
-
+          echo ""
+          echo "🔍 Verifying commit author attribution..."
+          
+          COMMIT_RANGE="${{ steps.commit-range.outputs.range }}"
+          
           # Check each commit's author email matches the committer email
           MISMATCHED=$(git log --pretty="%H %ae %ce" ${COMMIT_RANGE} | awk '{if($2 != $3) print}' || true)
-
+          
           if [ -n "$MISMATCHED" ]; then
             echo "⚠️  WARNING: Found commits where author email doesn't match committer email:"
             echo "$MISMATCHED"
-            echo "This may indicate commit spoofing."
+            echo ""
+            echo "This may indicate:"
+            echo "  - Commits made via GitHub web interface"
+            echo "  - Rebased commits with different committer"
+            echo "  - Potential commit spoofing (review carefully)"
           else
-            echo "✅ All commit authors verified!"
+            echo "✅ All commit authors match committers"
           fi
