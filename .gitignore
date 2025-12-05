@@ -1,0 +1,96 @@
+# ===================================
+# Security - Secrets and Credentials
+# ===================================
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Secret files
+secrets.yml
+secrets.yaml
+secrets.json
+*secret*
+*secrets*
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+*.ppk
+
+# API keys and tokens
+.apikey
+.token
+credentials.json
+service-account.json
+
+# Certificate files
+*.p12
+*.pfx
+*.cer
+*.crt (except public certs in specific directories)
+
+# Database dumps (may contain sensitive data)
+*.sql
+*.dump
+
+# Vault files
+.vault-token
+
+# ===================================
+# Development
+# ===================================
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+*.o
+*.exe
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# ===================================
+# CI/CD
+# ===================================
+
+# Terraform state (contains sensitive data)
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Kubernetes secrets
+*secret*.yaml (in k8s directories)
+
+# Docker secrets
+docker-compose.override.yml (if contains secrets)
