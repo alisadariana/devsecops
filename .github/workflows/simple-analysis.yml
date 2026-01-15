@@ -33,6 +33,8 @@ jobs:
         run: |
           echo "🔧 Running real static analysis tools..."
           
+          mkdir -p /tmp/analysis-results
+          
           for file in malware-demo/*.py; do
             if [ -f "$file" ]; then
               filename=$(basename "$file")
@@ -42,7 +44,7 @@ jobs:
               # Bandit
               echo "[Bandit]"
               docker run --rm -v $(pwd):/workspace analyzer:latest \
-                bandit "$file" -f json -o /workspace/${filename%.py}.bandit.json 2>/dev/null || true
+                bandit "$file" -f json -o "/tmp/${filename%.py}.bandit.json" 2>/dev/null || true
               
               # Flake8
               echo "[Flake8]"
@@ -52,9 +54,13 @@ jobs:
               # Semgrep
               echo "[Semgrep]"
               docker run --rm -v $(pwd):/workspace analyzer:latest \
-                semgrep "$file" --json -o /workspace/${filename%.py}.semgrep.json 2>/dev/null || true
+                semgrep "$file" --json -o "/tmp/${filename%.py}.semgrep.json" 2>/dev/null || true
             fi
           done
+          
+          # Copy results to workspace
+          docker run --rm -v $(pwd):/workspace -v /tmp:/tmp alpine:latest \
+            sh -c "cp /tmp/*.bandit.json /tmp/*.semgrep.json /workspace/malware-demo/ 2>/dev/null || true"
 
       - name: Upload analysis results
         if: always()
