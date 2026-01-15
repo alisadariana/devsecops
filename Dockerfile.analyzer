@@ -1,0 +1,90 @@
+# Malware Analysis Sandbox Dockerfile
+FROM python:3.11-slim
+
+# Install system dependencies for analysis tools
+RUN apt-get update && apt-get install -y \
+    # Basic tools
+    curl \
+    wget \
+    git \
+    procps \
+    htop \
+    net-tools \
+    lsof \
+    strace \
+    ltrace \
+    tcpdump \
+    # Security analysis tools
+    binwalk \
+    strings \
+    hexdump \
+    file \
+    # Network analysis
+    nmap \
+    netcat-openbsd \
+    # File analysis
+    exiftool \
+    # Clean up
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Python analysis libraries
+RUN pip install --no-cache-dir \
+    # Security analysis
+    yara-python \
+    pefile \
+    capstone \
+    unicorn \
+    # Code analysis
+    bandit \
+    safety \
+    semgrep \
+    pylint \
+    flake8 \
+    black \
+    mypy \
+    # Network analysis
+    scapy \
+    requests \
+    # System monitoring
+    psutil \
+    # Data processing
+    pandas \
+    numpy \
+    # Reporting
+    jinja2 \
+    pyyaml \
+    # Additional security tools
+    virustotal-api \
+    censys \
+    shodan
+
+# Create analysis user (non-root)
+RUN useradd -m -s /bin/bash analyzer && \
+    mkdir -p /analysis && \
+    mkdir -p /quarantine && \
+    mkdir -p /reports && \
+    chown -R analyzer:analyzer /analysis /quarantine /reports
+
+# Set up working directory
+WORKDIR /analysis
+USER analyzer
+
+# Copy analysis scripts
+COPY --chown=analyzer:analyzer analyze-malware.py /usr/local/bin/
+COPY --chown=analyzer:analyzer yara-rules/ /opt/yara-rules/
+
+# Make scripts executable
+RUN chmod +x /usr/local/bin/analyze-malware.py
+
+# Set environment variables for safe execution
+ENV PYTHONPATH=/analysis
+ENV MALWARE_ANALYSIS=true
+ENV SANDBOX_MODE=true
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import psutil; print('Analyzer healthy')" || exit 1
+
+# Default command
+CMD ["python3", "/usr/local/bin/analyze-malware.py"]
