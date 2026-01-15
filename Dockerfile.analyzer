@@ -1,51 +1,34 @@
-# Malware Analysis Sandbox Dockerfile
-FROM ubuntu:24.04
+# Simple Static Code Analyzer Dockerfile
+FROM python:3.11-slim
 
 # Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies for analysis tools
+# Install minimal system dependencies
 RUN apt-get update && apt-get install -y \
-    curl wget git procps net-tools lsof strace \
-    file binutils \
-    jq \
-    python3 python3-pip python3-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python analysis libraries (keep it minimal)
-RUN pip3 install --no-cache-dir \
-    yara-python \
+# Install Python analysis tools
+RUN pip install --no-cache-dir \
     bandit \
     safety \
     semgrep \
-    scapy \
-    requests \
-    psutil
+    pylint \
+    flake8
 
-# Create analysis user (non-root)
-RUN useradd -m -s /bin/bash analyzer && \
-    mkdir -p /analysis && \
-    mkdir -p /workspace && \
-    chown -R analyzer:analyzer /analysis /workspace
+# Create analyzer user
+RUN useradd -m -s /bin/bash analyzer
 
-# Set up working directory
+# Set working directory
 WORKDIR /workspace
-USER analyzer
 
-# Copy analysis scripts
-COPY --chown=analyzer:analyzer analyze-malware.py /usr/local/bin/
-COPY --chown=analyzer:analyzer yara-rules/ /opt/yara-rules/
-
-# Make scripts executable
+# Copy analysis script
+COPY analyze-malware.py /usr/local/bin/
 RUN chmod +x /usr/local/bin/analyze-malware.py
 
-# Set environment variables for safe execution
-ENV PYTHONPATH=/workspace
-ENV MALWARE_ANALYSIS=true
-ENV SANDBOX_MODE=true
+# Set up user
+USER analyzer
 
 # Default command
-CMD ["/usr/local/bin/analyze-malware.py"]
+CMD ["python3", "/usr/local/bin/analyze-malware.py"]
