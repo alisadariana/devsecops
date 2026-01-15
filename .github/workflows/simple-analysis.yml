@@ -1,0 +1,36 @@
+name: Simple Docker Code Analysis
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+    paths:
+      - 'malware-demo/**'
+      - 'Dockerfile.analyzer'
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f Dockerfile.analyzer -t analyzer:latest .
+
+      - name: Run analysis on demo files
+        run: |
+          echo "📊 Running code analysis..."
+          
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              echo "🔍 Analyzing: $file"
+              docker run --rm -v $(pwd):/workspace analyzer:latest \
+                python3 /usr/local/bin/analyze-malware.py "$file" || true
+            fi
+          done
+
+      - name: Generate report
+        if: always()
+        run: |
+          echo "✅ Analysis Complete"
+          echo "Files analyzed: $(find malware-demo -name '*.py' -type f | wc -l)"
