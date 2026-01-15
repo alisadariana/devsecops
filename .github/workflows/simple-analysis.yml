@@ -5,7 +5,6 @@ on:
     branches: [ main, develop, feature/** ]
     paths:
       - 'malware-demo/**'
-      - 'Dockerfile.analyzer'
   workflow_dispatch:
 
 jobs:
@@ -14,53 +13,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -f Dockerfile.analyzer -t analyzer:latest .
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install analysis tools
+        run: |
+          pip install bandit semgrep flake8
 
       - name: Run custom analyzer
         run: |
-          echo "🔍 Running custom malware analyzer..."
-          
+          echo "🔍 Running custom analyzer..."
           for file in malware-demo/*.py; do
             if [ -f "$file" ]; then
-              echo "Analyzing: $file"
-              docker run --rm -v $(pwd):/workspace analyzer:latest \
-                python3 /usr/local/bin/analyze-malware.py "$file" || true
+              python3 analyze-malware.py "$file"
             fi
           done
 
-      - name: Run real static analyzers
+      - name: Run Bandit (security scanner)
         run: |
-          echo "🔧 Running real static analysis tools..."
-          
-          mkdir -p /tmp/analysis-results
-          
+          echo "🔧 Running Bandit..."
           for file in malware-demo/*.py; do
             if [ -f "$file" ]; then
-              filename=$(basename "$file")
-              echo ""
-              echo "=== Analyzing: $filename ==="
-              
-              # Bandit
-              echo "[Bandit]"
-              docker run --rm -v $(pwd):/workspace analyzer:latest \
-                bandit "$file" -f json -o "/tmp/${filename%.py}.bandit.json" 2>/dev/null || true
-              
-              # Flake8
-              echo "[Flake8]"
-              docker run --rm -v $(pwd):/workspace analyzer:latest \
-                flake8 "$file" 2>/dev/null || true
-              
-              # Semgrep
-              echo "[Semgrep]"
-              docker run --rm -v $(pwd):/workspace analyzer:latest \
-                semgrep "$file" --json -o "/tmp/${filename%.py}.semgrep.json" 2>/dev/null || true
+              bandit "$file" -f json -o "${file%.py}.bandit.json" || true
             fi
           done
-          
-          # Copy results to workspace
-          docker run --rm -v $(pwd):/workspace -v /tmp:/tmp alpine:latest \
-            sh -c "cp /tmp/*.bandit.json /tmp/*.semgrep.json /workspace/malware-demo/ 2>/dev/null || true"
+
+      - name: Run Flake8 (code quality)
+        run: |
+          echo "📏 Running Flake8..."
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              flake8 "$file" || true
+            fi
+          done
+
+      - name: Run Semgrep (semantic analysis)
+        run: |
+          echo "🔎 Running Semgrep..."
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              semgrep "$file" --json -o "${file%.py}.semgrep.json" || true
+            fi
+          done
 
       - name: Upload analysis results
         if: always()
@@ -71,12 +67,15 @@ jobs:
             malware-demo/*.analysis.json
             malware-demo/*.bandit.json
             malware-demo/*.semgrep.json
+          if-no-files-found: warn
 
-      - name: Generate report
+      - name: Show analysis summary
         if: always()
         run: |
           echo "✅ Analysis Complete"
-          echo "Files analyzed: $(find malware-demo -name '*.py' -type f | wc -l)"
           echo ""
-          echo "Generated reports:"
-          find . -name "*.analysis.json" -o -name "*.bandit.json" -o -name "*.semgrep.json" | head -20
+          echo "📊 Files analyzed:"
+          find malware-demo -name "*.py" -type f
+          echo ""
+          echo "📋 Reports generated:"
+          find malware-demo -name "*.json" -type f || echo "No JSON reports found yet"
