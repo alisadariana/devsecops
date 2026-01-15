@@ -1,73 +1,60 @@
 # Malware Analysis Sandbox Dockerfile
-FROM python:3.11-slim
+FROM ubuntu:22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies for analysis tools
 RUN apt-get update && apt-get install -y \
-    # Basic tools
+    # Basic system tools
     curl \
     wget \
     git \
     procps \
-    htop \
     net-tools \
     lsof \
     strace \
-    ltrace \
-    tcpdump \
-    # Security analysis tools
-    binwalk \
+    # Essential analysis tools
+    file \
     strings \
     hexdump \
-    file \
-    # Network analysis
-    nmap \
-    netcat-openbsd \
-    # File analysis
-    exiftool \
+    # Python and pip
+    python3 \
+    python3-pip \
+    python3-dev \
+    # Build tools for Python packages
+    build-essential \
     # Clean up
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Install Python analysis libraries
-RUN pip install --no-cache-dir \
-    # Security analysis
+# Install Python analysis libraries (keep it minimal)
+RUN pip3 install --no-cache-dir --break-system-packages \
+    # Core analysis
     yara-python \
-    pefile \
-    capstone \
-    unicorn \
-    # Code analysis
+    # Security analysis
     bandit \
     safety \
     semgrep \
-    pylint \
-    flake8 \
-    black \
-    mypy \
     # Network analysis
     scapy \
     requests \
     # System monitoring
     psutil \
-    # Data processing
-    pandas \
-    numpy \
-    # Reporting
-    jinja2 \
-    pyyaml \
-    # Additional security tools
-    virustotal-api \
-    censys \
-    shodan
+    # Code analysis
+    ast \
+    # JSON processing
+    jq
 
 # Create analysis user (non-root)
 RUN useradd -m -s /bin/bash analyzer && \
     mkdir -p /analysis && \
-    mkdir -p /quarantine && \
-    mkdir -p /reports && \
-    chown -R analyzer:analyzer /analysis /quarantine /reports
+    mkdir -p /workspace && \
+    chown -R analyzer:analyzer /analysis /workspace
 
 # Set up working directory
-WORKDIR /analysis
+WORKDIR /workspace
 USER analyzer
 
 # Copy analysis scripts
@@ -78,13 +65,9 @@ COPY --chown=analyzer:analyzer yara-rules/ /opt/yara-rules/
 RUN chmod +x /usr/local/bin/analyze-malware.py
 
 # Set environment variables for safe execution
-ENV PYTHONPATH=/analysis
+ENV PYTHONPATH=/workspace
 ENV MALWARE_ANALYSIS=true
 ENV SANDBOX_MODE=true
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python3 -c "import psutil; print('Analyzer healthy')" || exit 1
-
 # Default command
-CMD ["python3", "/usr/local/bin/analyze-malware.py"]
+CMD ["/usr/local/bin/analyze-malware.py"]
