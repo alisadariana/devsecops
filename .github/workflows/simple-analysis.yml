@@ -17,20 +17,60 @@ jobs:
       - name: Build Docker image
         run: docker build -f Dockerfile.analyzer -t analyzer:latest .
 
-      - name: Run analysis on demo files
+      - name: Run custom analyzer
         run: |
-          echo "📊 Running code analysis..."
+          echo "🔍 Running custom malware analyzer..."
           
           for file in malware-demo/*.py; do
             if [ -f "$file" ]; then
-              echo "🔍 Analyzing: $file"
+              echo "Analyzing: $file"
               docker run --rm -v $(pwd):/workspace analyzer:latest \
                 python3 /usr/local/bin/analyze-malware.py "$file" || true
             fi
           done
+
+      - name: Run real static analyzers
+        run: |
+          echo "🔧 Running real static analysis tools..."
+          
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              echo ""
+              echo "=== Analyzing: $filename ==="
+              
+              # Bandit
+              echo "[Bandit]"
+              docker run --rm -v $(pwd):/workspace analyzer:latest \
+                bandit "$file" -f json -o /workspace/${filename%.py}.bandit.json 2>/dev/null || true
+              
+              # Flake8
+              echo "[Flake8]"
+              docker run --rm -v $(pwd):/workspace analyzer:latest \
+                flake8 "$file" 2>/dev/null || true
+              
+              # Semgrep
+              echo "[Semgrep]"
+              docker run --rm -v $(pwd):/workspace analyzer:latest \
+                semgrep "$file" --json -o /workspace/${filename%.py}.semgrep.json 2>/dev/null || true
+            fi
+          done
+
+      - name: Upload analysis results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: |
+            malware-demo/*.analysis.json
+            malware-demo/*.bandit.json
+            malware-demo/*.semgrep.json
 
       - name: Generate report
         if: always()
         run: |
           echo "✅ Analysis Complete"
           echo "Files analyzed: $(find malware-demo -name '*.py' -type f | wc -l)"
+          echo ""
+          echo "Generated reports:"
+          find . -name "*.analysis.json" -o -name "*.bandit.json" -o -name "*.semgrep.json" | head -20

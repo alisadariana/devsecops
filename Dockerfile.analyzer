@@ -17,18 +17,16 @@ RUN pip install --no-cache-dir \
     pylint \
     flake8
 
+# Copy analysis script (as root)
+COPY analyze-malware.py /usr/local/bin/
+RUN chmod +x /usr/local/bin/analyze-malware.py
+
 # Create analyzer user
 RUN useradd -m -s /bin/bash analyzer
 
 # Set working directory
 WORKDIR /workspace
-
-# Copy analysis script
-COPY analyze-malware.py /usr/local/bin/
-RUN chmod +x /usr/local/bin/analyze-malware.py
-
-# Set up user
-USER analyzer
+RUN chown -R analyzer:analyzer /workspace
 
 # Default command
 CMD ["python3", "/usr/local/bin/analyze-malware.py"]
