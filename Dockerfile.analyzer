@@ -1,0 +1,28 @@
+# Simple Static Code Analyzer Dockerfile
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python analysis tools
+RUN pip install --no-cache-dir \
+    bandit \
+    safety \
+    semgrep \
+    pylint \
+    flake8
+
+# Copy analysis script (as root)
+COPY analyze-malware.py /usr/local/bin/
+RUN chmod +x /usr/local/bin/analyze-malware.py
+
+# Set working directory
+WORKDIR /workspace
+
+# Default command
+CMD ["python3", "/usr/local/bin/analyze-malware.py"]

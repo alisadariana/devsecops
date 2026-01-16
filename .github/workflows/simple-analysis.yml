@@ -1,0 +1,81 @@
+name: Simple Docker Code Analysis
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+    paths:
+      - 'malware-demo/**'
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install analysis tools
+        run: |
+          pip install bandit semgrep flake8
+
+      - name: Run custom analyzer
+        run: |
+          echo "🔍 Running custom analyzer..."
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              python3 analyze-malware.py "$file"
+            fi
+          done
+
+      - name: Run Bandit (security scanner)
+        run: |
+          echo "🔧 Running Bandit..."
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              bandit "$file" -f json -o "${file%.py}.bandit.json" || true
+            fi
+          done
+
+      - name: Run Flake8 (code quality)
+        run: |
+          echo "📏 Running Flake8..."
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              flake8 "$file" || true
+            fi
+          done
+
+      - name: Run Semgrep (semantic analysis)
+        run: |
+          echo "🔎 Running Semgrep..."
+          for file in malware-demo/*.py; do
+            if [ -f "$file" ]; then
+              semgrep "$file" --json -o "${file%.py}.semgrep.json" || true
+            fi
+          done
+
+      - name: Upload analysis results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: |
+            malware-demo/*.analysis.json
+            malware-demo/*.bandit.json
+            malware-demo/*.semgrep.json
+          if-no-files-found: warn
+
+      - name: Show analysis summary
+        if: always()
+        run: |
+          echo "✅ Analysis Complete"
+          echo ""
+          echo "📊 Files analyzed:"
+          find malware-demo -name "*.py" -type f
+          echo ""
+          echo "📋 Reports generated:"
+          find malware-demo -name "*.json" -type f || echo "No JSON reports found yet"
